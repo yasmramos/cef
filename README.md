@@ -12,6 +12,7 @@ The Chromium Embedded Framework (CEF) is a simple framework for embedding Chromi
 * Support Forum - http://www.magpcss.org/ceforum/
 * Issue Tracker - https://github.com/chromiumembedded/cef/issues
 * C++ API Docs - [Stable release docs](https://cef-builds.spotifycdn.com/docs/stable.html) / [Beta release docs](https://cef-builds.spotifycdn.com/docs/beta.html)
+* Minimal libcef Build Guide - [docs/cef-minimal-build.md](docs/cef-minimal-build.md) / [scripts/cef/build-minimal-libcef.sh](scripts/cef/build-minimal-libcef.sh)
 * Downloads - https://cef-builds.spotifycdn.com/index.html
 * Donations - https://github.com/sponsors/magreenblatt
 
