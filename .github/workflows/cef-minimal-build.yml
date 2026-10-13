@@ -25,7 +25,43 @@ on:
         type: string
 
 jobs:
+  # Pre-flight check: verifies a runner with the requested labels is
+  # actually online before starting the (expensive) build job. Without
+  # this, GitHub silently queues the build job and eventually cancels it
+  # when no matching runner picks it up ("Workflow se canceló solo").
+  check-runner:
+    runs-on: ${{ github.event.inputs.runner_labels || 'self-hosted,linux,x64,cef-builder' }}
+    timeout-minutes: 5
+    outputs:
+      disk_gb: ${{ steps.disk.outputs.disk_gb }}
+    steps:
+      - name: Report runner environment
+        run: |
+          echo "Runner hostname : $(hostname)"
+          echo "Runner labels   : ${LABELS_EXPECTED}"
+          echo "OS              : $(lsb_release -ds 2>/dev/null || uname -a)"
+          echo "CPUs            : $(nproc)"
+          echo "Free RAM        : $(free -h | awk '/^Mem:/ {print $7}')"
+        env:
+          LABELS_EXPECTED: ${{ github.event.inputs.runner_labels }}
+
+      - name: Check free disk space (CEF build needs ~200 GB)
+        id: disk
+        run: |
+          TARGET="$(dirname "$DOWNLOAD_DIR")"
+          mkdir -p "$TARGET"
+          AVAIL_GB=$(df -BG --output=avail "$TARGET" | tail -1 | tr -dc '0-9')
+          echo "disk_gb=$AVAIL_GB" >> "$GITHUB_OUTPUT"
+          echo "Free disk on $TARGET: ${AVAIL_GB} GB"
+          if [ "$AVAIL_GB" -lt 200 ]; then
+            echo "::error::Insufficient disk space (${AVAIL_GB} GB < 200 GB required). The build will very likely fail."
+            exit 1
+          fi
+        env:
+          DOWNLOAD_DIR: /opt/cef/chromium_git
+
   build-minimal-libcef:
+    needs: check-runner
     # Runner labels come from the manual trigger input so you can target
     # any self-hosted machine registered in the repo/org settings.
     runs-on: ${{ github.event.inputs.runner_labels || 'self-hosted,linux,x64,cef-builder' }}
