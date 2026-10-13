@@ -2,9 +2,12 @@
 #
 # NOTE: A full Chromium/CEF build requires ~200 GB of free SSD space and
 # many hours of CPU time, which exceeds the resources of standard GitHub
-# Actions runners. This workflow is provided as a template intended to run
-# on a self-hosted runner provisioned for large builds. It can be triggered
-# manually (workflow_dispatch) or nightly (schedule).
+# Actions runners. This workflow is designed to run on a self-hosted
+# runner provisioned for large builds.
+#
+# It is triggered MANUALLY only (Actions tab -> "CEF Minimal Build" ->
+# "Run workflow"). No automatic triggers (push/pull_request/schedule) are
+# defined so it never consumes runner time unless explicitly requested.
 name: CEF Minimal Build
 
 on:
@@ -14,15 +17,18 @@ on:
         description: "CEF milestone branch to build (e.g. 6834)"
         required: false
         default: "6834"
-  schedule:
-    # Nightly build at 02:00 UTC (disabled by default on repos without
-    # a suitable self-hosted runner).
-    - cron: "0 2 * * *"
+        type: string
+      runner_labels:
+        description: "Comma-separated runner labels (must include 'self-hosted')"
+        required: false
+        default: "self-hosted,linux,x64,cef-builder"
+        type: string
 
 jobs:
   build-minimal-libcef:
-    # Replace with labels of a self-hosted runner that has >= 200 GB free.
-    runs-on: [self-hosted, linux, x64, cef-builder]
+    # Runner labels come from the manual trigger input so you can target
+    # any self-hosted machine registered in the repo/org settings.
+    runs-on: ${{ github.event.inputs.runner_labels || 'self-hosted,linux,x64,cef-builder' }}
 
     env:
       DOWNLOAD_DIR: /opt/cef/chromium_git
