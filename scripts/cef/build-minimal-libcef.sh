@@ -86,6 +86,10 @@ log "Step 1/5: Preparing build environment"
 require_cmd git
 require_cmd python3
 require_cmd curl
+# depot_tools provides gn/ninja, but CEF's cef_create_dist.pl (packaging
+# step) requires cmake from the system toolchain. Fail fast with a clear
+# message instead of hours into the build.
+require_cmd cmake
 check_disk_space "${DOWNLOAD_DIR}"
 
 if [ ! -d "${DEPOT_TOOLS_DIR}" ]; then
@@ -94,6 +98,14 @@ if [ ! -d "${DEPOT_TOOLS_DIR}" ]; then
 fi
 export PATH="${DEPOT_TOOLS_DIR}:${PATH}"
 log "depot_tools added to PATH: ${DEPOT_TOOLS_DIR}"
+
+# Some CEF/Chromium helper scripts still invoke plain `python`. If the
+# host doesn't provide it (python-is-python3), create a shim in
+# depot_tools so it lands on the PATH we just exported.
+if ! require_cmd python; then
+    log "Creating 'python' -> 'python3' shim in ${DEPOT_TOOLS_DIR}"
+    ln -sf "$(command -v python3)" "${DEPOT_TOOLS_DIR}/python"
+fi
 
 # --------------------------- Step 2: Source download ------------------------
 log "Step 2/5: Downloading CEF/Chromium sources (branch ${CEF_BRANCH})"
